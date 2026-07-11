@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="id" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Panduan Sholat Otomatis</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .arabic { font-family: 'Amiri', serif; }
+        
+        @keyframes pulse-finger {
+            0%, 100% { transform: scale(1) translateY(0); opacity: 1; }
+            50% { transform: scale(1.15) translateY(-3px); opacity: 0.8; }
+        }
+        .finger-active { animation: pulse-finger 1s ease-in-out infinite; }
+        
+        .word-card {
+            min-height: 85px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+        }
+
+        /* Custom Scrollbar for horizontal tabs */
+        .custom-scrollbar-x::-webkit-scrollbar { height: 4px; }
+        .custom-scrollbar-x::-webkit-scrollbar-track { background: #f1f5f9; }
+        .custom-scrollbar-x::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        
+        /* Custom Scrollbar for Arabic area */
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 8px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 8px; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col justify-between select-none">
+
+    <!-- Header Atas -->
+    <header class="bg-gradient-to-r from-teal-700 to-emerald-600 text-white shadow-md sticky top-0 z-50 px-4 py-3">
+        <div class="flex items-center justify-between max-w-md mx-auto w-full">
+            <div class="flex items-center space-x-3">
+                <div class="bg-white/20 p-2 rounded-xl backdrop-blur-sm">
+                    <i class="fa-solid fa-kaaba text-xl text-white"></i>
+                </div>
+                <div>
+                    <h1 class="text-sm md:text-base font-bold leading-tight">Panduan Sholat Cerdas</h1>
+                    <p class="text-[10px] md:text-xs text-teal-100 font-medium" id="header-subtitle">Menyesuaikan Jumlah Rakaat</p>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Tab Pilihan Sholat (Scrollable horizontal) -->
+    <div class="bg-white border-b border-slate-200 sticky top-[60px] md:top-[68px] z-40 shadow-sm overflow-x-auto custom-scrollbar-x">
+        <div class="flex min-w-max max-w-md mx-auto" id="sholat-tabs-container">
+            <button onclick="setSholat('subuh')" id="tab-subuh" class="sholat-tab flex-1 py-3 px-4 text-center text-xs md:text-sm font-bold border-b-[3px] border-teal-600 text-teal-700 bg-teal-50/50 transition-colors">Subuh (2)</button>
+            <button onclick="setSholat('zuhur')" id="tab-zuhur" class="sholat-tab flex-1 py-3 px-4 text-center text-xs md:text-sm font-bold border-b-[3px] border-transparent text-slate-500 hover:text-slate-700 bg-white transition-colors">Zuhur (4)</button>
+            <button onclick="setSholat('asar')" id="tab-asar" class="sholat-tab flex-1 py-3 px-4 text-center text-xs md:text-sm font-bold border-b-[3px] border-transparent text-slate-500 hover:text-slate-700 bg-white transition-colors">Asar (4)</button>
+            <button onclick="setSholat('magrib')" id="tab-magrib" class="sholat-tab flex-1 py-3 px-4 text-center text-xs md:text-sm font-bold border-b-[3px] border-transparent text-slate-500 hover:text-slate-700 bg-white transition-colors">Magrib (3)</button>
+            <button onclick="setSholat('isya')" id="tab-isya" class="sholat-tab flex-1 py-3 px-4 text-center text-xs md:text-sm font-bold border-b-[3px] border-transparent text-slate-500 hover:text-slate-700 bg-white transition-colors">Isya (4)</button>
+        </div>
+    </div>
+
+    <!-- Konten Utama -->
+    <main class="flex-1 p-3 md:p-4 flex flex-col gap-4 max-w-md mx-auto w-full pb-24">
+
+        <!-- Dropdown Langkah Sholat (Otomatis terisi sesuai sholat yg dipilih) -->
+        <div class="bg-white p-3 md:p-4 rounded-2xl shadow-sm border border-slate-200 flex items-center gap-3">
+            <div class="w-8 h-8 rounded-full bg-teal-100 text-teal-600 flex items-center justify-center shrink-0">
+                <i class="fa-solid fa-list-ol text-sm"></i>
+            </div>
+            <select id="gerakan-step-select" onchange="changeStep(this.value)" class="flex-1 bg-slate-50 border border-slate-200 text-slate-800 text-xs md:text-sm font-bold rounded-xl px-3 py-2.5 outline-none focus:ring-2 focus:ring-teal-500/20 transition-all cursor-pointer truncate">
+                <!-- Diisi otomatis oleh JS -->
+            </select>
+        </div>
+
+        <!-- ================= KARTU PANDUAN ================= -->
+        <div class="bg-white rounded-2xl shadow-md border border-slate-200 overflow-hidden flex flex-col relative">
+            
+            <!-- Ilustrasi & Judul Langkah -->
+            <div class="p-4 bg-gradient-to-br from-teal-50 to-white border-b border-slate-100 flex items-center gap-4">
+                <div id="card-illus-container" class="w-20 h-20 flex items-center justify-center shrink-0">
+                    <!-- SVG -->
+                </div>
+                <div class="overflow-hidden">
+                    <span id="card-subtitle" class="text-[10px] md:text-xs font-extrabold text-teal-700 tracking-wider uppercase bg-teal-100 px-2 py-0.5 rounded border border-teal-200 inline-block mb-1">-</span>
+                    <h2 id="card-title" class="text-lg md:text-xl font-bold text-slate-800 leading-tight">-</h2>
+                </div>
+            </div>
+
+            <!-- KOTAK KHUSUS PILIHAN SURAH PENDEK (Hanya muncul jika disuruh) -->
+            <div id="surah-selector-container" class="hidden p-3.5 bg-teal-600/5 border-b border-teal-100">
+                <p class="text-[10px] font-bold text-teal-800 uppercase tracking-wider mb-2 text-center">Pilih Surah Pendek:</p>
+                <div class="grid grid-cols-3 gap-2">
+                    <button onclick="selectShortSurah(0)" class="surah-opt-btn py-2 text-xs font-bold border rounded-xl transition-all shadow-sm">Al-Ikhlas</button>
+                    <button onclick="selectShortSurah(1)" class="surah-opt-btn py-2 text-xs font-bold border rounded-xl transition-all">Al-Kautsar</button>
+                    <button onclick="selectShortSurah(2)" class="surah-opt-btn py-2 text-xs font-bold border rounded-xl transition-all">Al-'Asr</button>
+                </div>
+            </div>
+
+            <!-- Petunjuk Ringkas Gerakan -->
+            <div class="px-5 py-4 bg-slate-50/50 border-b border-slate-100">
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Instruksi Gerakan:</p>
+                <div id="card-desc" class="text-xs md:text-sm text-slate-700 leading-relaxed font-medium"></div>
+            </div>
+
+            <!-- AREA INTERAKTIF HURUF ARAB -->
+            <div class="p-4 bg-white">
+                <div class="flex items-center justify-between mb-3.5">
+                    <span class="text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                        <i class="fa-solid fa-hand-pointer text-teal-500"></i> Ketuk kata arab:
+                    </span>
+                    <span class="text-[9px] md:text-[10px] text-amber-600 bg-amber-50 px-2 py-1 rounded border border-amber-200 font-bold flex items-center gap-1">
+                        <i class="fa-solid fa-hand-point-up finger-active text-amber-500"></i> Bimbingan
+                    </span>
+                </div>
+                <div class="max-h-[240px] overflow-y-auto custom-scrollbar pr-1">
+                    <div id="arabic-flow-box" dir="rtl" class="arabic flex flex-wrap gap-2.5 leading-relaxed items-start justify-start content-start">
+                        <!-- Kata arab -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- KOTAK TERJEMAHAN TELUNJUK -->
+            <div id="translation-pointer-box" class="mx-4 mb-4 p-3.5 bg-teal-50 rounded-xl border border-teal-200 flex items-center gap-3.5 transition-all duration-300 transform shadow-sm relative overflow-hidden">
+                <div class="w-10 h-10 rounded-full bg-gradient-to-br from-teal-500 to-teal-700 text-white flex items-center justify-center shrink-0 shadow-md border-2 border-white relative z-10">
+                    <span class="text-xl finger-active">☝️</span>
+                </div>
+                <div class="flex-1 relative z-10">
+                    <p class="text-[10px] font-bold text-teal-700/80 uppercase tracking-wider mb-0.5">Arti Kata Terpilih:</p>
+                    <p id="pointed-word-meaning" class="text-sm md:text-base font-semibold text-teal-950 leading-snug">Pilih kata di atas...</p>
+                </div>
+            </div>
+
+            <!-- Teks Latin Lengkap -->
+            <div class="px-4 py-3 border-t border-slate-100 bg-white">
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Cara Membaca (Latin):</p>
+                <p id="latin-full" class="text-xs md:text-sm text-slate-700 italic font-medium leading-relaxed">-</p>
+            </div>
+
+            <!-- Arti Lengkap -->
+            <div class="px-4 py-3 bg-slate-50 border-t border-slate-100">
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Terjemahan Lengkap:</p>
+                <p id="translation-full" class="text-xs md:text-sm text-slate-600 leading-relaxed font-medium">-</p>
+            </div>
+
+            <!-- Panduan Detil Penting -->
+            <div class="p-4 bg-amber-50 border-t border-amber-100 flex gap-3 items-start">
+                <div class="mt-0.5 bg-amber-200 text-amber-700 w-6 h-6 rounded-full flex items-center justify-center shrink-0">
+                    <i class="fa-solid fa-lightbulb text-[10px] animate-pulse"></i>
+                </div>
+                <div class="flex-1">
+                    <p class="text-[10px] md:text-xs font-bold text-amber-900 uppercase tracking-wider mb-0.5">Catatan Penting:</p>
+                    <p id="card-tip" class="text-xs text-amber-800/90 leading-relaxed font-medium">-</p>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Tombol Navigasi Bawah -->
+    <footer class="bg-white border-t border-slate-200 p-3 md:p-4 fixed bottom-0 left-0 right-0 z-40 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+        <div class="max-w-md mx-auto flex gap-3">
+            <button id="nav-btn-prev" class="flex-1 bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-700 py-3.5 px-4 rounded-xl text-xs md:text-sm font-bold transition-all flex items-center justify-center gap-2 border border-slate-200">
+                <i class="fa-solid fa-arrow-left"></i> Sebelumnya
+            </button>
+            <button id="nav-btn-next" class="flex-1 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 active:scale-95 text-white py-3.5 px-4 rounded-xl text-xs md:text-sm font-bold transition-all flex items-center justify-center gap-2 shadow-md border border-teal-500">
+                Lanjut <i class="fa-solid fa-arrow-right"></i>
+            </button>
+        </div>
+    </footer>
+
+    <!-- Logika Aplikasi & Data -->
+    <script>
+        // State
+        let currentSholatId = 'subuh';
+        let currentStepIdx = 0;
+        let activeSequence = []; // Akan berisi array dari langkah-langkah sholat yang dipilih
+        let selectedSurahIdx = 0;
+
+        // SVG Illustrations
+        const svgBerdiriTakbir = `<svg viewBox="0 0 100 100" class="w-full h-full text-teal-600 drop-shadow-md"><circle cx="50" cy="22" r="10" fill="currentColor"/><path d="M40 38 Q50 34 60 38 L65 65 L35 65 Z" fill="currentColor"/><path d="M42 65 L42 95 L48 95 L48 65 Z" fill="currentColor"/><path d="M52 65 L52 95 L58 95 L58 65 Z" fill="currentColor"/><path d="M38 40 L28 28 L32 25 L42 37 Z" fill="currentColor"/><path d="M62 40 L72 28 L68 25 L58 37 Z" fill="currentColor"/></svg>`;
+        const svgBerdiriSedekap = `<svg viewBox="0 0 100 100" class="w-full h-full text-teal-600 drop-shadow-md"><circle cx="50" cy="22" r="10" fill="currentColor"/><path d="M40 38 Q50 34 60 38 L65 65 L35 65 Z" fill="currentColor"/><path d="M42 65 L42 95 L48 95 L48 65 Z" fill="currentColor"/><path d="M52 65 L52 95 L58 95 L58 65 Z" fill="currentColor"/><path d="M38 40 L45 50 L55 45 L50 38 Z" fill="currentColor"/><path d="M62 40 L55 50 L45 45 L50 38 Z" fill="currentColor"/></svg>`;
+        const svgRukuk = `<svg viewBox="0 0 100 100" class="w-full h-full text-teal-600 drop-shadow-md"><circle cx="25" cy="45" r="10" fill="currentColor"/><path d="M35 48 L65 48 L70 65 L45 65 Z" fill="currentColor"/><path d="M60 65 L60 95 L66 95 L66 65 Z" fill="currentColor"/><path d="M66 65 L66 95 L72 95 L72 65 Z" fill="currentColor"/><path d="M40 50 L50 70 L55 65 L45 45 Z" fill="currentColor"/></svg>`;
+        const svgSujud = `<svg viewBox="0 0 100 100" class="w-full h-full text-teal-600 drop-shadow-md"><circle cx="22" cy="82" r="9" fill="currentColor"/><path d="M32 78 Q45 60 65 75 L75 90 L32 90 Z" fill="currentColor"/><path d="M40 70 L30 85 L35 88 L45 75 Z" fill="currentColor"/></svg>`;
+        const svgDuduk = `<svg viewBox="0 0 100 100" class="w-full h-full text-teal-600 drop-shadow-md"><circle cx="45" cy="38" r="10" fill="currentColor"/><path d="M35 55 Q45 50 55 55 L65 85 L35 85 Z" fill="currentColor"/><path d="M58 85 L75 85 L75 90 L58 90 Z" fill="currentColor"/><path d="M38 58 L45 75 L50 72 L42 55 Z" fill="currentColor"/></svg>`;
+        const svgSalam = `<svg viewBox="0 0 100 100" class="w-full h-full text-teal-600 drop-shadow-md"><circle cx="65" cy="38" r="10" fill="currentColor"/><path d="M35 55 Q45 50 55 55 L65 85 L35 85 Z" fill="currentColor"/><path d="M58 85 L75 85 L75 90 L58 90 Z" fill="currentColor"/></svg>`; 
+
+        function scrollToTop() { window.scrollTo({ top: 0, behavior: 'smooth' }); }
+
+        // ================= DATABASE LANGKAH (BUILDING BLOCKS) =================
+        const niatDB = {
+            subuh: { title: "Niat Sholat Subuh", subtitle: "2 Rakaat", latin: "Ushollii fardhash shubh-hi rak'ataini mustaqbilal qiblati adā'an lillaahi ta'aalaa.", translation: "Aku niat shalat fardhu Subuh dua rakaat, menghadap kiblat, tunai karena Allah Ta'ala.", words: [{ar:"أُصَلِّي",lt:"Ushollii",mn:"Aku niat sholat"},{ar:"فَرْضَ",lt:"fardha",mn:"fardhu"},{ar:"الصُّبْحِ",lt:"shubh-hi",mn:"Subuh"},{ar:"رَكْعَتَيْنِ",lt:"rak'ataini",mn:"2 rakaat"},{ar:"مُسْتَقْبِلَ",lt:"mustaqbilal",mn:"menghadap"},{ar:"الْقِبْلَةِ",lt:"qiblati",mn:"kiblat"},{ar:"أَدَاءً",lt:"adā'an",mn:"tunai"},{ar:"لِلَّهِ",lt:"lillaahi",mn:"karena Allah"},{ar:"تَعَالَى",lt:"ta'aalaa",mn:"Ta'ala"}] },
+            zuhur: { title: "Niat Sholat Zuhur", subtitle: "4 Rakaat", latin: "Ushollii fardhadh dhuhri arba'a raka'aatin mustaqbilal qiblati adā'an lillaahi ta'aalaa.", translation: "Aku niat shalat fardhu Zuhur empat rakaat, menghadap kiblat, tunai karena Allah Ta'ala.", words: [{ar:"أُصَلِّي",lt:"Ushollii",mn:"Aku niat sholat"},{ar:"فَرْضَ",lt:"fardha",mn:"fardhu"},{ar:"الظُّهْرِ",lt:"dhuhri",mn:"Zuhur"},{ar:"أَرْبَعَ",lt:"arba'a",mn:"4"},{ar:"رَكَعَاتٍ",lt:"raka'aatin",mn:"rakaat"},{ar:"مُسْتَقْبِلَ",lt:"mustaqbilal",mn:"menghadap"},{ar:"الْقِبْلَةِ",lt:"qiblati",mn:"kiblat"},{ar:"أَدَاءً",lt:"adā'an",mn:"tunai"},{ar:"لِلَّهِ",lt:"lillaahi",mn:"karena Allah"},{ar:"تَعَالَى",lt:"ta'aalaa",mn:"Ta'ala"}] },
+            asar: { title: "Niat Sholat Asar", subtitle: "4 Rakaat", latin: "Ushollii fardhal 'ashri arba'a raka'aatin mustaqbilal qiblati adā'an lillaahi ta'aalaa.", translation: "Aku niat shalat fardhu Asar empat rakaat, menghadap kiblat, tunai karena Allah Ta'ala.", words: [{ar:"أُصَلِّي",lt:"Ushollii",mn:"Aku niat sholat"},{ar:"فَرْضَ",lt:"fardha",mn:"fardhu"},{ar:"الْعَصْرِ",lt:"ashri",mn:"Asar"},{ar:"أَرْبَعَ",lt:"arba'a",mn:"4"},{ar:"رَكَعَاتٍ",lt:"raka'aatin",mn:"rakaat"},{ar:"مُسْتَقْبِلَ",lt:"mustaqbilal",mn:"menghadap"},{ar:"الْقِبْلَةِ",lt:"qiblati",mn:"kiblat"},{ar:"أَدَاءً",lt:"adā'an",mn:"tunai"},{ar:"لِلَّهِ",lt:"lillaahi",mn:"karena Allah"},{ar:"تَعَالَى",lt:"ta'aalaa",mn:"Ta'ala"}] },
+            magrib: { title: "Niat Sholat Magrib", subtitle: "3 Rakaat", latin: "Ushollii fardhal maghribi tsalaatsa raka'aatin mustaqbilal qiblati adā'an lillaahi ta'aalaa.", translation: "Aku niat shalat fardhu Magrib tiga rakaat, menghadap kiblat, tunai karena Allah Ta'ala.", words: [{ar:"أُصَلِّي",lt:"Ushollii",mn:"Aku niat sholat"},{ar:"فَرْضَ",lt:"fardha",mn:"fardhu"},{ar:"الْمَغْرِبِ",lt:"maghribi",mn:"Magrib"},{ar:"ثَلَاثَ",lt:"tsalaatsa",mn:"3"},{ar:"رَكَعَاتٍ",lt:"raka'aatin",mn:"rakaat"},{ar:"مُسْتَقْبِلَ",lt:"mustaqbilal",mn:"menghadap"},{ar:"الْقِبْلَةِ",lt:"qiblati",mn:"kiblat"},{ar:"أَدَاءً",lt:"adā'an",mn:"tunai"},{ar:"لِلَّهِ",lt:"lillaahi",mn:"karena Allah"},{ar:"تَعَالَى",lt:"ta'aalaa",mn:"Ta'ala"}] },
+            isya: { title: "Niat Sholat Isya", subtitle: "4 Rakaat", latin: "Ushollii fardhal ‘isyaa'i arba'a raka'aatin mustaqbilal qiblati adā'an lillaahi ta'aalaa.", translation: "Aku niat shalat fardhu Isya empat rakaat, menghadap kiblat, tunai karena Allah Ta'ala.", words: [{ar:"أُصَلِّي",lt:"Ushollii",mn:"Aku niat sholat"},{ar:"فَرْضَ",lt:"fardha",mn:"fardhu"},{ar:"الْعِشَاءِ",lt:"‘isyaa'i",mn:"Isya"},{ar:"أَرْبَعَ",lt:"arba'a",mn:"4"},{ar:"رَكَعَاتٍ",lt:"raka'aatin",mn:"rakaat"},{ar:"مُسْتَقْبِلَ",lt:"mustaqbilal",mn:"menghadap"},{ar:"الْقِبْلَةِ",lt:"qiblati",mn:"kiblat"},{ar:"أَدَاءً",lt:"adā'an",mn:"tunai"},{ar:"لِلَّهِ",lt:"lillaahi",mn:"karena Allah"},{ar:"تَعَالَى",lt:"ta'aalaa",mn:"Ta'ala"}] }
+        };
+
+        const dbSteps = {
+            getNiat: function(sholatId) {
+                const n = niatDB[sholatId];
+                return {
+                    title: n.title, subtitle: "Langkah Awal",
+                    desc: "<ul class='list-disc pl-4 space-y-1'><li>Berdiri menghadap kiblat.</li><li>Hadirkan niat di dalam hati saat akan mengangkat tangan (Takbiratul Ihram).</li></ul>",
+                    tip: n.subtitle + " - Syarat sah sholat adalah berniat.",
+                    illus: svgBerdiriTakbir, words: n.words, latin: n.latin, translation: n.translation
+                };
+            },
+            takbir: {
+                title: "Takbiratul Ihram", subtitle: "Rukun Sholat",
+                desc: "<ul class='list-disc pl-4 space-y-1'><li>Angkat tangan setinggi telinga/dada, telapak menghadap kiblat.</li><li>Ucapkan 'Allahu Akbar' (bersamaan dengan niat di hati).</li></ul>",
+                tip: "Haram memalingkan dada dari kiblat saat melakukan Takbiratul Ihram.",
+                illus: svgBerdiriTakbir,
+                words: [{ ar:"اللَّهُ", lt:"Allāhu", mn:"Allah" }, { ar:"أَكْبَرُ", lt:"Akbar", mn:"Maha Besar" }],
+                latin: "Allāhu Akbar.", translation: "Allah Maha Besar."
+            },
+            iftitah: {
+                title: "Doa Iftitah", subtitle: "Sunnah",
+                desc: "<ul class='list-disc pl-4 space-y-1'><li>Turunkan tangan, bersedekap di antara dada dan pusar (tangan kanan di atas pergelangan kiri).</li><li>Pandangan ke tempat sujud.</li></ul>",
+                tip: "Hanya dibaca di rakaat pertama. Sangat dianjurkan untuk kekhusyukan.",
+                illus: svgBerdiriSedekap,
+                words: [{ar:"اللَّهُ أَكْبَرُ كَبِيرًا",lt:"Allāhu akbar kabiiran",mn:"Allah Maha Besar dgn sempurna"},{ar:"وَالْحَمْدُ لِلَّهِ كَثِيرًا",lt:"walhamdu lillaahi katsiiran",mn:"Segala puji bagi-Nya sebanyak-banyaknya"},{ar:"وَسُبْحَانَ اللَّهِ",lt:"wa subhaanallāhi",mn:"Maha Suci Allah"},{ar:"بُكْرَةً وَأَصِيلًا",lt:"bukratan wa ashiilaa",mn:"di pagi dan petang hari"}],
+                latin: "Allāhu akbar kabiiraw-walhamdu lillaahi katsiiraw-wa subhaanallāhi bukrataw-wa ashiilaa.", translation: "Allah Maha Besar dengan kebesaran yang sempurna. Segala puji bagi Allah dengan pujian yang banyak. Maha Suci Allah di waktu pagi dan petang."
+            },
+            fatihah: {
+                title: "Surah Al-Fatihah", subtitle: "Rukun (Wajib Semua Rakaat)",
+                desc: "<ul class='list-disc pl-4 space-y-1'><li>Tetap bersedekap.</li><li>Wajib dibaca tartil (jelas makhrajnya).</li><li>Tidak sah sholat tanpa membaca Al-Fatihah.</li></ul>",
+                tip: "Dianjurkan berhenti (waqaf) di setiap akhir ayat.",
+                illus: svgBerdiriSedekap,
+                words: [
+                    { ar:"بِسْمِ اللَّهِ", lt:"Bismillaahi", mn:"Dengan nama Allah" },
+                    { ar:"الرَّحْمَٰنِ الرَّحِيمِ", lt:"r-rahmaanir-rahiim", mn:"Yang Maha Pengasih Maha Penyayang" },
+                    { ar:"الْحَمْدُ لِلَّهِ", lt:"Alhamdu lillaahi", mn:"Segala puji bagi Allah" },
+                    { ar:"رَبِّ الْعَالَمِينَ", lt:"rabbil-'aalamiin", mn:"Tuhan semesta alam" },
+                    { ar:"الرَّحْمَٰنِ الرَّحِيمِ", lt:"Ar-rahmaanir-rahiim", mn:"Maha Pengasih, Maha Penyayang" },
+                    { ar:"مَالِكِ يَوْمِ الدِّينِ", lt:"Maaliki yaumid-diin", mn:"Pemilik hari pembalasan" },
+                    { ar:"إِيَّاكَ نَعْبُدُ", lt:"Iyyaaka na'budu", mn:"Hanya kepada-Mu kami menyembah" },
+                    { ar:"وَإِيَّاكَ نَسْتَعِينُ", lt:"wa iyyaaka nasta'iin", mn:"dan hanya kepada-Mu kami mohon pertolongan" },
+                    { ar:"اهْدِنَا الصِّرَاطَ الْمُسْتَقِيمَ", lt:"Ihdinash-shiraathal-mustaqiim", mn:"Tunjukilah kami jalan yang lurus" },
+                    { ar:"صِرَاطَ الَّذِينَ", lt:"Shiraathal-ladziina", mn:"Jalan orang-orang yang" },
+                    { ar:"أَنْعَمْتَ عَلَيْهِمْ", lt:"an'amta 'alaihim", mn:"Engkau beri nikmat atas mereka" },
+                    { ar:"غَيْرِ الْمَغْضُوبِ عَلَيْهِمْ", lt:"ghairil-maghdhuubi 'alaihim", mn:"Bukan jalan yang dimurkai" },
+                    { ar:"وَلَا الضَّالِّينَ", lt:"wa ladh-dhaalliin", mn:"dan bukan jalan mereka yang sesat" }
+                ],
+                latin: "Bismillaahir-rahmaanir-rahiim. Alhamdu lillaahi rabbil-'aalamiin. Ar-rahmaanir-rahiim. Maaliki yaumid-diin. Iyyaaka na'budu wa iyyaaka nasta'iin. Ihdinash-shiraathal-mustaqiim. Shiraathal-ladziina an'amta 'alaihim ghairil-maghdhuubi 'alaihim wa ladh-dhaalliin.",
+                translation: "Dengan nama Allah Yang Maha Pengasih lagi Maha Penyayang. Segala puji bagi Allah, Tuhan semesta alam. Maha Pengasih lagi Maha Penyayang. Pemilik hari Pembalasan. Hanya kepada Engkaulah kami menyembah dan memohon pertolongan. Tunjukilah kami jalan yang lurus. (Yaitu) jalan orang-orang yang telah Engkau beri nikmat kepadanya; bukan (jalan) mereka yang dimurkai dan bukan (pula jalan) mereka yang sesat."
+            },
+            surah: {
+                title: "Membaca Surah Pendek", subtitle: "Sunnah Rakaat 1 & 2",
+                desc: "", tip: "", illus: svgBerdiriSedekap, isSurahStep: true, words: [] 
+            },
+            rukuk: {
+                title: "Rukuk", subtitle: "Tunduk Khusyuk",
+                desc: "<ul class='list-disc pl-4 space-y-1'><li>Angkat tangan sambil takbir, lalu bungkukkan badan 90 derajat.</li><li>Tangan mencengkeram lutut. Punggung lurus.</li><li>Tuma'ninah (diam sejenak).</li></ul>",
+                tip: "Baca 3 kali dengan tenang.",
+                illus: svgRukuk,
+                words: [{ar:"سُبْحَانَ",lt:"Subhaana",mn:"Maha Suci"},{ar:"رَبِّيَ الْعَظِيمِ",lt:"rabbiyal 'adhiimi",mn:"Tuhanku Yang Maha Agung"},{ar:"وَبِحَمْدِهِ",lt:"wa bihamdih",mn:"dan memuji-Nya"}],
+                latin: "Subhaana rabbiyal 'adhiimi wa bihamdih. (3x)", translation: "Maha Suci Tuhanku Yang Maha Agung dan dengan memuji-Nya."
+            },
+            itidal: {
+                title: "I'tidal", subtitle: "Bangkit dari Rukuk",
+                desc: "<ul class='list-disc pl-4 space-y-1'><li>Bangkit tegak sambil mengangkat tangan setinggi bahu lalu luruskan ke bawah.</li><li>Tuma'ninah (berhenti diam sejenak berdiri tegak).</li></ul>",
+                tip: "Jangan langsung sujud sebelum tubuh tegak sempurna.",
+                illus: svgBerdiriTakbir,
+                words: [{ar:"سَمِعَ اللَّهُ",lt:"Sami'allaahu",mn:"Allah Maha Mendengar"},{ar:"لِمَنْ حَمِدَهُ",lt:"liman hamidah",mn:"bagi siapa yang memuji-Nya"},{ar:"رَبَّنَا",lt:"Rabbanaa",mn:"Wahai Tuhan kami"},{ar:"لَكَ الْحَمْدُ",lt:"lakal hamdu",mn:"bagi-Mu segala puji"}],
+                latin: "Sami'allaahu liman hamidah. Rabbanaa lakal hamdu.", translation: "Allah Maha Mendengar orang yang memuji-Nya. Wahai Tuhan kami, bagi-Mu segala puji."
+            },
+            sujud: {
+                title: "Sujud", subtitle: "Merendahkan Diri",
+                desc: "<ul class='list-disc pl-4 space-y-1'><li>Turun sambil takbir.</li><li>Tempelkan dahi, hidung, telapak tangan, lutut, dan ujung jari kaki ke lantai.</li><li>Jari kaki menekuk ke kiblat.</li></ul>",
+                tip: "Baca 3 kali. Saat sujud adalah saat hamba paling dekat dengan Tuhannya.",
+                illus: svgSujud,
+                words: [{ar:"سُبْحَانَ",lt:"Subhaana",mn:"Maha Suci"},{ar:"رَبِّيَ الْأَعْلَىٰ",lt:"rabbiyal a'laa",mn:"Tuhanku Yang Maha Tinggi"},{ar:"وَبِحَمْدِهِ",lt:"wa bihamdih",mn:"dan memuji-Nya"}],
+                latin: "Subhaana rabbiyal a'laa wa bihamdih. (3x)", translation: "Maha Suci Tuhanku Yang Maha Tinggi dan dengan memuji-Nya."
+            },
+            duduk_antara: {
+                title: "Duduk Antara 2 Sujud", subtitle: "Duduk Iftirasy",
+                desc: "<ul class='list-disc pl-4 space-y-1'><li>Duduk di atas telapak kaki kiri. Kaki kanan ditegakkan.</li><li>Letakkan telapak tangan di atas paha.</li></ul>",
+                tip: "Setelah membaca doa ini, lakukan Sujud yang ke-2.",
+                illus: svgDuduk,
+                words: [{ar:"رَبِّ اغْفِرْ لِي",lt:"Rabbighfirlii",mn:"Tuhanku ampunilah aku"},{ar:"وَارْحَمْنِي",lt:"warhamnii",mn:"rahmatilah aku"},{ar:"وَاجْبُرْنِي",lt:"wajburnii",mn:"tutuplah kekuranganku"},{ar:"وَارْفَعْنِي",lt:"warfa'nii",mn:"tinggikan derajatku"},{ar:"وَارْزُقْنِي",lt:"warzuqnii",mn:"berilah aku rezeki"},{ar:"وَاهْدِنِي",lt:"wahdinii",mn:"berilah aku petunjuk"},{ar:"وَعَافِنِي",lt:"wa'aafinii",mn:"sehatkanlah aku"},{ar:"وَاعْفُ عَنِّي",lt:"wa'fu 'annii",mn:"dan maafkanlah aku"}],
+                latin: "Rabbighfirlii warhamnii wajburnii warfa'nii warzuqnii wahdinii wa'aafinii wa'fu 'annii.", translation: "Ya Tuhanku ampunilah aku, rahmatilah aku, cukupkanlah kekuranganku, tinggikanlah derajatku, berilah aku rezeki, berilah aku petunjuk, sehatkanlah aku, dan maafkanlah aku."
+            },
+            bangkit: {
+                title: "Bangkit Berdiri", subtitle: "Menuju Rakaat Selanjutnya",
+                desc: "<ul class='list-disc pl-4 space-y-1'><li>Bangkit dari posisi duduk berdiri tegak kembali.</li><li>Sambil bergerak naik, ucapkan takbir (Allahu Akbar) tanpa mengangkat tangan.</li></ul>",
+                tip: "Berdiri tegak lurus dan kembali bersedekap untuk memulai bacaan rakaat berikutnya.",
+                illus: svgBerdiriTakbir,
+                words: [{ ar:"اللَّهُ", lt:"Allāhu", mn:"Allah" }, { ar:"أَكْبَرُ", lt:"Akbar", mn:"Maha Besar" }],
+                latin: "Allāhu Akbar.", translation: "Allah Maha Besar."
+            },
+            tasyahud_awal: {
+                title: "Tasyahud Awal", subtitle: "Duduk Iftirasy",
+                desc: "<ul class='list-disc pl-4 space-y-1'><li>Duduk di atas telapak kaki kiri (Iftirasy).</li><li>Genggam jari kanan, angkat telunjuk saat mengucap 'Illallaah'.</li></ul>",
+                tip: "Tasyahud awal berhenti setelah membaca shalawat atas Nabi Muhammad.",
+                illus: svgDuduk,
+                words: [
+                    {ar:"التَّحِيَّاتُ الْمُبَارَكَاتُ",lt:"At-tahiyyaatul-mubaarakaatu",mn:"Segala penghormatan & keberkahan"},
+                    {ar:"الصَّلَوَاتُ الطَّيِّبَاتُ لِلَّهِ",lt:"sh-shalawaatuth-thayyibaatu lillaah",mn:"kesejahteraan & kebaikan bagi Allah"},
+                    {ar:"السَّلَامُ عَلَيْكَ أَيُّهَا النَّبِيُّ",lt:"As-salaamu 'alaika ayyuhan-nabiyyu",mn:"Keselamatan tercurah padamu wahai Nabi"},
+                    {ar:"وَرَحْمَةُ اللَّهِ وَبَرَكَاتُهُ",lt:"wa rahmatullaahi wa barakaatuh",mn:"serta rahmat & berkah Allah"},
+                    {ar:"السَّلَامُ عَلَيْنَا وَعَلَىٰ عِبَادِ اللَّهِ الصَّالِحِينَ",lt:"As-salaamu 'alainaa wa 'alaa 'ibaadillaahish-shaalihiin",mn:"Keselamatan atas kami & hamba Allah yg saleh"},
+                    {ar:"أَشْهَدُ أَنْ لَا إِلَٰهَ إِلَّا اللَّهُ",lt:"Asyhadu al-laa ilaaha illallaah",mn:"Aku bersaksi tiada Tuhan selain Allah"},
+                    {ar:"وَأَشْهَدُ أَنَّ مُحَمَّدًا رَسُولُ اللَّهِ",lt:"wa asyhadu anna Muhammadar rasuulullaah",mn:"& aku bersaksi Muhammad utusan Allah"},
+                    {ar:"اللَّهُمَّ صَلِّ عَلَىٰ مُحَمَّدٍ",lt:"Allaahumma shalli 'alaa Muhammad",mn:"Ya Allah, limpahkan rahmat kpd Nabi Muhammad"}
+                ],
+                latin: "At-tahiyyaatul-mubaarakaatush-shalawaatuth-thayyibaatu lillaah. As-salaamu 'alaika ayyuhan-nabiyyu wa rahmatullaahi wa barakaatuh. As-salaamu 'alainaa wa 'alaa 'ibaadillaahish-shaalihiin. Asyhadu al-laa ilaaha illallaah, wa asyhadu anna Muhammadar rasuulullaah. Allaahumma shalli 'alaa Muhammad.",
+                translation: "Segala penghormatan, keberkahan, rahmat, dan kebaikan adalah milik Allah. Semoga keselamatan, rahmat Allah dan berkah-Nya tercurah kepadamu, wahai Nabi. Semoga keselamatan tercurah kepada kami dan hamba-hamba Allah yang saleh. Aku bersaksi bahwa tiada Tuhan selain Allah, dan aku bersaksi bahwa Muhammad adalah utusan Allah. Ya Allah, limpahkanlah rahmat kepada Nabi Muhammad."
+            },
+            tasyahud_akhir: {
+                title: "Tasyahud Akhir", subtitle: "Duduk Tawarruk",
+                desc: "<ul class='list-disc pl-4 space-y-1'><li>Duduk bokong menyentuh lantai (Tawarruk), kaki kiri di bawah betis kanan.</li><li>Bacaan sama seperti Tasyahud Awal, namun ditambah Shalawat Ibrahimiyyah.</li></ul>",
+                tip: "Jari telunjuk tangan kanan tetap lurus ke arah kiblat sebagai simbol Tauhid.",
+                illus: svgDuduk,
+                words: [
+                    {ar:"التَّحِيَّاتُ... (Sama s.d Shalawat Nabi)",lt:"(Sama s.d Allaahumma shalli 'alaa Muhammad)",mn:"(Lihat teks latin/terjemah)"},
+                    {ar:"وَعَلَىٰ آلِ مُحَمَّدٍ",lt:"wa 'alaa aali Muhammad",mn:"dan kepada keluarga Nabi Muhammad"},
+                    {ar:"كَمَا صَلَّيْتَ عَلَىٰ إِبْرَاهِيمَ",lt:"kamaa shallaita 'alaa Ibraahiim",mn:"sebagaimana Engkau beri rahmat kpd Nabi Ibrahim"},
+                    {ar:"وَعَلَىٰ آلِ إِبْرَاهِيمَ",lt:"wa 'alaa aali Ibraahiim",mn:"dan keluarga Nabi Ibrahim"},
+                    {ar:"وَبَارِكْ عَلَىٰ مُحَمَّدٍ",lt:"wa baarik 'alaa Muhammad",mn:"dan berkahilah Nabi Muhammad"},
+                    {ar:"وَعَلَىٰ آلِ مُحَمَّدٍ",lt:"wa 'alaa aali Muhammad",mn:"dan keluarga Nabi Muhammad"},
+                    {ar:"كَمَا بَارَكْتَ عَلَىٰ إِبْرَاهِيمَ",lt:"kamaa baarakta 'alaa Ibraahiim",mn:"sebagaimana Engkau berkahi Nabi Ibrahim"},
+                    {ar:"وَعَلَىٰ آلِ إِبْرَاهِيمَ",lt:"wa 'alaa aali Ibraahiim",mn:"dan keluarga Nabi Ibrahim"},
+                    {ar:"فِي الْعَالَمِينَ إِنَّكَ حَمِيدٌ مَجِيدٌ",lt:"fil 'aalamiina innaka hamiidum majiid",mn:"di seluruh alam, sungguh Engkau Maha Terpuji Maha Mulia"}
+                ],
+                latin: "At-tahiyyaatul ... Allaahumma shalli 'alaa Muhammad, wa 'alaa aali Muhammad, kamaa shallaita 'alaa Ibraahiim wa 'alaa aali Ibraahiim. Wa baarik 'alaa Muhammad wa 'alaa aali Muhammad, kamaa baarakta 'alaa Ibraahiim wa 'alaa aali Ibraahiim, fil 'aalamiina innaka hamiidum majiid.",
+                translation: "(Lanjutan)... dan kepada keluarga Nabi Muhammad. Sebagaimana Engkau telah memberi rahmat kepada Nabi Ibrahim dan keluarga Nabi Ibrahim. Dan berkahilah Nabi Muhammad dan keluarga Nabi Muhammad. Sebagaimana Engkau telah memberkahi Nabi Ibrahim dan keluarga Nabi Ibrahim. Di seluruh alam semesta, sesungguhnya Engkau Maha Terpuji lagi Maha Mulia."
+            },
+            qunut: {
+                title: "Doa Qunut", subtitle: "Khusus Subuh",
+                desc: "<ul class='list-disc pl-4 space-y-1'><li>Dibaca setelah bangun dari rukuk (I'tidal) di rakaat ke-2, sebelum sujud.</li><li>Angkat kedua tangan seperti berdoa.</li></ul>",
+                tip: "Hukumnya Sunnah Ab'ad. Jika tertinggal, disunnahkan sujud sahwi.",
+                illus: svgBerdiriTakbir,
+                words: [
+                    {ar:"اللَّهُمَّ اهْدِنِي فِيمَنْ هَدَيْتَ",lt:"Allaahummahdinii fiiman hadait",mn:"Ya Allah berilah aku petunjuk spt orang yg Kau beri petunjuk"},
+                    {ar:"وَعَافِنِي فِيمَنْ عَافَيْتَ",lt:"wa 'aafinii fiiman 'aafait",mn:"& berilah aku kesehatan spt orang yg Kau beri kesehatan"},
+                    {ar:"وَتَوَلَّنِي فِيمَنْ تَوَلَّيْتَ",lt:"watawallanii fiiman tawallait",mn:"& peliharalah aku spt org yg Kau pelihara"},
+                    {ar:"وَبَارِكْ لِي فِيمَا أَعْطَيْتَ",lt:"wabaarik lii fiimaa a'thait",mn:"& berkahilah apa yg telah Kau karuniakan"},
+                    {ar:"وَقِنِي شَرَّ مَا قَضَيْتَ",lt:"waqinii syarra maa qadhait",mn:"& lindungilah dr keburukan yg Kau tetapkan"}
+                ],
+                latin: "Allaahummahdinii fiiman hadait, wa 'aafinii fiiman 'aafait, watawallanii fiiman tawallait, wabaarik lii fiimaa a'thait, waqinii syarra maa qadhait... (berlanjut).",
+                translation: "Ya Allah, berilah aku petunjuk seperti orang yang Kau beri petunjuk. Berilah kesehatan seperti orang yang Kau beri kesehatan. Peliharalah aku seperti orang yang Kau pelihara. Berkahilah karunia yang telah Engkau berikan padaku. Dan lindungilah aku dari bahaya keburukan yang telah Engkau tetapkan..."
+            },
+            salam: {
+                title: "Salam", subtitle: "Penutup",
+                desc: "<ul class='list-disc pl-4 space-y-1'><li>Sambil posisi duduk Tawarruk, tolehkan wajah ke kanan sampai pipi terlihat dari belakang sambil baca salam.</li><li>Kemudian tolehkan ke kiri sambil baca salam (sunnah).</li></ul>",
+                tip: "Salam pertama (ke kanan) adalah rukun. Salam selesai, usaplah wajah dan perbanyak dzikir.",
+                illus: svgSalam,
+                words: [{ ar:"السَّلَامُ عَلَيْكُمْ", lt:"As-salaamu 'alaikum", mn:"Semoga keselamatan tercurah atas kalian" }, { ar:"وَرَحْمَةُ اللَّهِ", lt:"wa rahmatullaah", mn:"serta rahmat Allah" }],
+                latin: "As-salaamu 'alaikum wa rahmatullaah.", translation: "Semoga keselamatan dan rahmat Allah senantiasa melimpah kepadamu sekalian."
+            }
+        };
+
+        const surahPendekData = [
+            { name: "Al-Ikhlas", desc: "<p>Surah ke-112: Mengesakan Allah.</p>", tip: "Setara sepertiga Al-Quran.", latin: "Qul huwal-laahu ahad. Allaahush-shamad. Lam yalid wa lam yuulad. Wa lam yakul-lahuu kufuwan ahad.", translation: "Katakanlah (Muhammad), 'Dialah Allah Yang Maha Esa. Allah tempat meminta segala sesuatu. Dia tidak beranak dan tidak pula diperanakkan, dan tiada sesuatu yang setara dengan-Nya.'", words: [{ar:"قُلْ هُوَ اللَّهُ أَحَدٌ",lt:"Qul huwal-laahu ahad",mn:"Katakanlah, Dialah Allah Yang Maha Esa"},{ar:"اللَّهُ الصَّمَدُ",lt:"Allaahush-shamad",mn:"Allah tempat meminta segala sesuatu"},{ar:"لَمْ يَلِدْ وَلَمْ يُولَدْ",lt:"Lam yalid wa lam yuulad",mn:"Dia tidak beranak & tdk diperanakkan"},{ar:"وَلَمْ يَكُنْ لَهُ كُفُوًا أَحَدٌ",lt:"Wa lam yakul-lahuu kufuwan ahad",mn:"& tdk ada sesuatu yg setara dgn-Nya"}] },
+            { name: "Al-Kautsar", desc: "<p>Surah ke-108: Nikmat yang banyak.</p>", tip: "Mengajarkan sholat dan berkurban.", latin: "Innaa a'thainaakal-kautsar. Fa shalli lirabbika wanhar. Inna syaani'aka huwal-abtar.", translation: "Sungguh, Kami telah memberimu (Muhammad) nikmat yang banyak. Maka laksanakanlah sholat karena Tuhanmu, dan berkurbanlah. Sungguh, orang yang membencimu dialah yang terputus.", words: [{ar:"إِنَّا أَعْطَيْنَاكَ الْكَوْثَرَ",lt:"Innaa a'thainaakal-kautsar",mn:"Sungguh Kami memberimu nikmat yg banyak"},{ar:"فَصَلِّ لِرَبِّكَ وَانْحَرْ",lt:"Fa shalli lirabbika wanhar",mn:"Maka sholat & berkurbanlah krn Tuhanmu"},{ar:"إِنَّ شَانِئَكَ هُوَ الْأَبْتَرُ",lt:"Inna syaani'aka huwal-abtar",mn:"Sungguh org yg membencimu mrk yg terputus"}] },
+            { name: "Al-'Asr", desc: "<p>Surah ke-103: Demi Masa.</p>", tip: "Memanfaatkan waktu demi kebaikan.", latin: "Wal-'ashr. Innal-insaana lafii khusr. Illal-ladziina aamanuu wa 'amilush-shaalihaati wa tawaashau bil-haqqi wa tawaashau bish-shabr.", translation: "Demi masa. Sungguh, manusia berada dalam kerugian. Kecuali orang-orang yang beriman dan mengerjakan kebajikan serta saling menasihati untuk kebenaran dan kesabaran.", words: [{ar:"وَالْعَصْرِ",lt:"Wal-'ashr",mn:"Demi masa"},{ar:"إِنَّ الْإِنْسَانَ لَفِي خُسْرٍ",lt:"Innal-insaana lafii khusr",mn:"Sungguh manusia dlm kerugian"},{ar:"إِلَّا الَّذِينَ آمَنُوا وَعَمِلُوا الصَّالِحَاتِ",lt:"Illal-ladziina aamanuu wa 'amilush-shaalihaati",mn:"Kecuali org beriman & beramal saleh"},{ar:"وَتَوَاصَوْا بِالْحَقِّ وَتَوَاصَوْا بِالصَّبْرِ",lt:"wa tawaashau bil-haqqi wa tawaashau bish-shabr",mn:"& saling menasihati dlm kebenaran & kesabaran"}] }
+        ];
+
+        // ================= SEQUENCE GENERATOR =================
+        function prefixTitle(stepObj, prefix) {
+            return { ...stepObj, title: prefix + stepObj.title };
+        }
+
+        function generateSequence(sholatId) {
+            let seq = [];
+            
+            // RAKAAT 1 (Semua sholat sama formatnya)
+            seq.push(prefixTitle(dbSteps.getNiat(sholatId), "Mulai: "));
+            seq.push(prefixTitle(dbSteps.takbir, "Rakaat 1: "));
+            seq.push(prefixTitle(dbSteps.iftitah, "Rakaat 1: "));
+            seq.push(prefixTitle(dbSteps.fatihah, "Rakaat 1: "));
+            seq.push(prefixTitle(dbSteps.surah, "Rakaat 1: "));
+            seq.push(prefixTitle(dbSteps.rukuk, "Rakaat 1: "));
+            seq.push(prefixTitle(dbSteps.itidal, "Rakaat 1: "));
+            seq.push(prefixTitle(dbSteps.sujud, "Rakaat 1 (Sujud 1): "));
+            seq.push(prefixTitle(dbSteps.duduk_antara, "Rakaat 1: "));
+            seq.push(prefixTitle(dbSteps.sujud, "Rakaat 1 (Sujud 2): "));
+            
+            // RAKAAT 2
+            if (sholatId === 'subuh') {
+                seq.push(prefixTitle(dbSteps.bangkit, "Ke Rakaat 2: "));
+                seq.push(prefixTitle(dbSteps.fatihah, "Rakaat 2: "));
+                seq.push(prefixTitle(dbSteps.surah, "Rakaat 2: "));
+                seq.push(prefixTitle(dbSteps.rukuk, "Rakaat 2: "));
+                seq.push(prefixTitle(dbSteps.itidal, "Rakaat 2: "));
+                seq.push(prefixTitle(dbSteps.qunut, "Rakaat 2: ")); // KHUSUS SUBUH
+                seq.push(prefixTitle(dbSteps.sujud, "Rakaat 2 (Sujud 1): "));
+                seq.push(prefixTitle(dbSteps.duduk_antara, "Rakaat 2: "));
+                seq.push(prefixTitle(dbSteps.sujud, "Rakaat 2 (Sujud 2): "));
+                seq.push(prefixTitle(dbSteps.tasyahud_akhir, "Akhir: "));
+                seq.push(prefixTitle(dbSteps.salam, "Selesai: "));
+                return seq;
+            }
+
+            // Utk Zuhur, Asar, Magrib, Isya
+            seq.push(prefixTitle(dbSteps.bangkit, "Ke Rakaat 2: "));
+            seq.push(prefixTitle(dbSteps.fatihah, "Rakaat 2: "));
+            seq.push(prefixTitle(dbSteps.surah, "Rakaat 2: "));
+            seq.push(prefixTitle(dbSteps.rukuk, "Rakaat 2: "));
+            seq.push(prefixTitle(dbSteps.itidal, "Rakaat 2: "));
+            seq.push(prefixTitle(dbSteps.sujud, "Rakaat 2 (Sujud 1): "));
+            seq.push(prefixTitle(dbSteps.duduk_antara, "Rakaat 2: "));
+            seq.push(prefixTitle(dbSteps.sujud, "Rakaat 2 (Sujud 2): "));
+            seq.push(prefixTitle(dbSteps.tasyahud_awal, "Rakaat 2: ")); // Tasyahud Awal
+
+            // RAKAAT 3
+            seq.push(prefixTitle(dbSteps.bangkit, "Ke Rakaat 3: "));
+            seq.push(prefixTitle(dbSteps.fatihah, "Rakaat 3: ")); // Tdk ada surah pendek
+            seq.push(prefixTitle(dbSteps.rukuk, "Rakaat 3: "));
+            seq.push(prefixTitle(dbSteps.itidal, "Rakaat 3: "));
+            seq.push(prefixTitle(dbSteps.sujud, "Rakaat 3 (Sujud 1): "));
+            seq.push(prefixTitle(dbSteps.duduk_antara, "Rakaat 3: "));
+            seq.push(prefixTitle(dbSteps.sujud, "Rakaat 3 (Sujud 2): "));
+
+            if (sholatId === 'magrib') {
+                seq.push(prefixTitle(dbSteps.tasyahud_akhir, "Akhir: "));
+                seq.push(prefixTitle(dbSteps.salam, "Selesai: "));
+                return seq;
+            }
+
+            // RAKAAT 4 (Zuhur, Asar, Isya)
+            seq.push(prefixTitle(dbSteps.bangkit, "Ke Rakaat 4: "));
+            seq.push(prefixTitle(dbSteps.fatihah, "Rakaat 4: ")); // Tdk ada surah pendek
+            seq.push(prefixTitle(dbSteps.rukuk, "Rakaat 4: "));
+            seq.push(prefixTitle(dbSteps.itidal, "Rakaat 4: "));
+            seq.push(prefixTitle(dbSteps.sujud, "Rakaat 4 (Sujud 1): "));
+            seq.push(prefixTitle(dbSteps.duduk_antara, "Rakaat 4: "));
+            seq.push(prefixTitle(dbSteps.sujud, "Rakaat 4 (Sujud 2): "));
+            seq.push(prefixTitle(dbSteps.tasyahud_akhir, "Akhir: "));
+            seq.push(prefixTitle(dbSteps.salam, "Selesai: "));
+
+            return seq;
+        }
+
+        // ================= CORE LOGIC & UI =================
+        function initApp() {
+            // Navigasi bawah
+            document.getElementById('nav-btn-prev').addEventListener('click', () => {
+                if (currentStepIdx > 0) changeStep(currentStepIdx - 1);
+            });
+            document.getElementById('nav-btn-next').addEventListener('click', () => {
+                if (currentStepIdx < activeSequence.length - 1) changeStep(currentStepIdx + 1);
+                else setSholat(currentSholatId); // Reset to start
+            });
+
+            // Mulai dgn Subuh
+            setSholat('subuh');
+        }
+
+        function setSholat(sholatId) {
+            currentSholatId = sholatId;
+            currentStepIdx = 0;
+            
+            // Generate sequence sholat (Array 20 - 40 langkah)
+            activeSequence = generateSequence(sholatId);
+
+            // Update UI Tabs (Warna)
+            document.querySelectorAll('.sholat-tab').forEach(tab => {
+                tab.className = tab.id === `tab-${sholatId}`
+                    ? "sholat-tab flex-1 py-3 px-4 text-center text-xs md:text-sm font-bold border-b-[3px] border-teal-600 text-teal-700 bg-teal-50/50 transition-colors"
+                    : "sholat-tab flex-1 py-3 px-4 text-center text-xs md:text-sm font-bold border-b-[3px] border-transparent text-slate-500 hover:text-slate-700 bg-white transition-colors";
+            });
+
+            // Update Subtitle Header
+            const subTitleMap = { subuh: "2 Rakaat (Dgn Qunut)", zuhur: "4 Rakaat (Dgn Tasyahud Awal)", asar: "4 Rakaat (Dgn Tasyahud Awal)", magrib: "3 Rakaat (Dgn Tasyahud Awal)", isya: "4 Rakaat (Dgn Tasyahud Awal)" };
+            document.getElementById('header-subtitle').textContent = `Menyesuaikan: ${subTitleMap[sholatId]}`;
+
+            // Populate Dropdown
+            const selectEl = document.getElementById('gerakan-step-select');
+            selectEl.innerHTML = '';
+            activeSequence.forEach((step, idx) => {
+                const opt = document.createElement('option');
+                opt.value = idx;
+                opt.textContent = `${idx + 1}. ${step.title}`;
+                selectEl.appendChild(opt);
+            });
+
+            scrollToTop();
+            renderStep(currentStepIdx);
+        }
+
+        function changeStep(idx) {
+            currentStepIdx = parseInt(idx);
+            document.getElementById('gerakan-step-select').value = currentStepIdx;
+            scrollToTop();
+            renderStep(currentStepIdx);
+        }
+
+        function renderStep(idx) {
+            const data = activeSequence[idx];
+            
+            document.getElementById('card-title').textContent = data.title;
+            document.getElementById('card-subtitle').textContent = data.subtitle;
+            document.getElementById('card-illus-container').innerHTML = data.illus;
+
+            const btnPrev = document.getElementById('nav-btn-prev');
+            const btnNext = document.getElementById('nav-btn-next');
+            const surahBox = document.getElementById('surah-selector-container');
+
+            if (data.isSurahStep) {
+                surahBox.classList.remove('hidden');
+                selectShortSurah(selectedSurahIdx); // Load data surah
+            } else {
+                surahBox.classList.add('hidden');
+                document.getElementById('card-desc').innerHTML = data.desc;
+                document.getElementById('card-tip').textContent = data.tip;
+                document.getElementById('latin-full').textContent = data.latin;
+                document.getElementById('translation-full').textContent = data.translation;
+                renderInteractiveArabic(data.words);
+            }
+
+            // Button States
+            btnPrev.disabled = idx === 0;
+            btnPrev.style.opacity = idx === 0 ? '0.4' : '1';
+            
+            if (idx === activeSequence.length - 1) {
+                btnNext.innerHTML = 'Ulangi Waktu Ini <i class="fa-solid fa-rotate-right"></i>';
+                btnNext.className = "flex-1 bg-slate-800 hover:bg-slate-900 active:scale-95 text-white py-3.5 px-4 rounded-xl text-xs md:text-sm font-bold transition-all flex items-center justify-center gap-2 shadow-md border border-slate-700";
+            } else {
+                btnNext.innerHTML = 'Lanjut <i class="fa-solid fa-arrow-right"></i>';
+                btnNext.className = "flex-1 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 active:scale-95 text-white py-3.5 px-4 rounded-xl text-xs md:text-sm font-bold transition-all flex items-center justify-center gap-2 shadow-md border border-teal-500";
+            }
+        }
+
+        function selectShortSurah(idx) {
+            selectedSurahIdx = idx;
+            document.querySelectorAll('.surah-opt-btn').forEach((btn, index) => {
+                btn.className = index === idx 
+                    ? "surah-opt-btn py-2 text-xs font-bold border rounded-xl transition-all bg-gradient-to-r from-teal-500 to-teal-600 border-teal-600 text-white shadow-md"
+                    : "surah-opt-btn py-2 text-xs font-bold border rounded-xl transition-all bg-white border-slate-200 text-slate-600 hover:bg-slate-50";
+            });
+
+            const surah = surahPendekData[selectedSurahIdx];
+            document.getElementById('card-desc').innerHTML = surah.desc;
+            document.getElementById('card-tip').textContent = surah.tip;
+            document.getElementById('latin-full').textContent = surah.latin;
+            document.getElementById('translation-full').textContent = surah.translation;
+            renderInteractiveArabic(surah.words);
+        }
+
+        function renderInteractiveArabic(words) {
+            const flowBox = document.getElementById('arabic-flow-box');
+            flowBox.innerHTML = '';
+            
+            words.forEach((w, wordIdx) => {
+                const wordBtn = document.createElement('div');
+                wordBtn.className = "word-card bg-white border border-slate-200 hover:bg-teal-50/50 cursor-pointer rounded-xl p-2.5 min-w-[70px] md:min-w-[85px] flex-grow text-center shadow-sm transition-all duration-200 relative overflow-hidden group";
+                wordBtn.setAttribute('data-word-idx', wordIdx);
+                
+                wordBtn.innerHTML = `
+                    <span class="text-[22px] md:text-[26px] font-semibold text-slate-800 leading-tight block mb-1 group-hover:text-teal-700 transition-colors">${w.ar}</span>
+                    <span class="text-[9px] md:text-[11px] text-slate-500 font-sans italic font-medium block">${w.lt}</span>
+                    <div class="pointer-indicator absolute bottom-0 left-0 right-0 h-1 bg-teal-500 transform scale-x-0 transition-transform origin-center"></div>
+                `;
+
+                wordBtn.addEventListener('click', () => triggerPointing(wordBtn, w));
+                flowBox.appendChild(wordBtn);
+            });
+
+            setTimeout(() => {
+                const firstWordBtn = flowBox.querySelector('[data-word-idx="0"]');
+                if (firstWordBtn) firstWordBtn.click();
+            }, 50);
+        }
+
+        function triggerPointing(element, wordObj) {
+            const flowBox = document.getElementById('arabic-flow-box');
+            flowBox.querySelectorAll('[data-word-idx]').forEach(btn => {
+                btn.classList.remove('bg-teal-50', 'border-teal-400', 'ring-2', 'ring-teal-100');
+                btn.classList.add('bg-white', 'border-slate-200');
+                btn.querySelector('.pointer-indicator').classList.remove('scale-x-100');
+            });
+
+            element.classList.remove('bg-white', 'border-slate-200');
+            element.classList.add('bg-teal-50', 'border-teal-400', 'ring-2', 'ring-teal-100');
+            element.querySelector('.pointer-indicator').classList.add('scale-x-100');
+
+            const box = document.getElementById('translation-pointer-box');
+            box.classList.remove('scale-100', 'opacity-100');
+            box.classList.add('scale-95', 'opacity-50');
+            
+            setTimeout(() => {
+                document.getElementById('pointed-word-meaning').innerHTML = `
+                    <span class="text-teal-700 font-bold font-serif text-lg">"${wordObj.ar}"</span> 
+                    <span class="mx-1 text-teal-400 text-xs"><i class="fa-solid fa-arrow-right-long"></i></span> 
+                    <span class="text-slate-800 font-bold border-b-2 border-teal-300 pb-0.5">${wordObj.mn}</span>
+                `;
+                box.classList.remove('scale-95', 'opacity-50');
+                box.classList.add('scale-100', 'opacity-100');
+            }, 150);
+        }
+
+        window.onload = initApp;
+    </script>
+</body>
+</html>
